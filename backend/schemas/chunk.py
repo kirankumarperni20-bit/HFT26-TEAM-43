@@ -2,6 +2,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Chunk(BaseModel):
+    """Canonical chunk schema used by the PDF ingestion pipeline."""
+
     model_config = ConfigDict(extra="forbid")
 
     chunk_id: str = Field(..., min_length=1)
@@ -13,15 +15,18 @@ class Chunk(BaseModel):
 
     @field_validator("chunk_id", "paper_id", mode="after")
     @classmethod
-    def validate_non_empty_identifiers(cls, v: str) -> str:
-        if not v.strip():
+    def validate_non_empty_identifiers(cls, value: str) -> str:
+        if not value.strip():
             raise ValueError("Identifier cannot be empty or whitespace only")
-        return v
+        return value
 
     @field_validator("text", mode="after")
     @classmethod
-    def validate_text(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("text cannot be empty or whitespace only")
-        # Return exact string untouched: do not strip, lowercase, or normalize
-        return v
+    def validate_non_empty_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Text cannot be empty or whitespace only")
+        return value
+
+
+# Backward-compatible name required by Member 2's retrieval and database modules.
+DocumentChunk = Chunk
