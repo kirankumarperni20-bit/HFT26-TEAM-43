@@ -271,7 +271,7 @@ def test_top_k_limits_results(repository, search_engine):
             chunk_id=f"P001_C{i:03d}",
             paper_id="P001",
             page_number=1,
-            paragraph_number=i,
+            paragraph_number=i+1,
             text=f"Passage {i}",
         )
         for i in range(10)
