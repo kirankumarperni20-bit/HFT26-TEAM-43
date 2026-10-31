@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 from typing import Optional
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 
 from backend.schemas.document import (
     DocumentMetadata,
@@ -142,6 +142,7 @@ async def upload_document(
 
     # Transition status to processing
     repo.update_document_status(paper_id, DocumentStatus.PROCESSING)
+    repo.save_pdf_bytes(paper_id, content)
 
     try:
         # Step 1: Extract pages using PyMuPDF
@@ -247,3 +248,32 @@ async def get_page_text(
         "page_number": page_number,
         "text": text,
     }
+
+
+@router.get("/{paper_id}/pdf")
+async def get_document_pdf(
+    paper_id: str,
+    repo: DocumentRepository = Depends(get_repository),
+):
+    """Streams the original raw PDF file for inline browser viewing."""
+    doc = repo.get_document(paper_id)
+    if doc is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with paper_id '{paper_id}' not found.",
+        )
+
+    pdf_bytes = repo.get_pdf_bytes(paper_id)
+    if not pdf_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Raw PDF file for paper_id '{paper_id}' not available.",
+        )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{doc.filename}"',
+        },
+    )

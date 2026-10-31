@@ -71,12 +71,14 @@ class ResearchJobService:
         now_iso = datetime.now(timezone.utc).isoformat()
         poll_url = f"/api/research/{research_id}"
 
+        focus_val = payload.focus_query or getattr(payload, "research_focus", None)
         record = ResearchJobRecord(
             research_id=research_id,
             status=ResearchStatus.QUEUED,
             paper_ids=payload.paper_ids,
             tasks=payload.tasks,
-            focus_query=payload.focus_query,
+            focus_query=focus_val,
+            research_focus=focus_val,
             created_at=now_iso,
             completed_at=None,
             papers=None,
@@ -109,6 +111,7 @@ class ResearchJobService:
                 detail=f"Research job '{research_id}' not found.",
             )
 
+        focus_val = job.focus_query or getattr(job, "research_focus", None)
         return ResearchResultResponse(
             research_id=job.research_id,
             status=job.status,
@@ -116,7 +119,8 @@ class ResearchJobService:
             completed_at=job.completed_at,
             paper_ids=job.paper_ids,
             tasks=job.tasks,
-            focus_query=job.focus_query,
+            focus_query=focus_val,
+            research_focus=focus_val,
             poll_url=f"/api/research/{job.research_id}",
             papers=job.papers,
             comparison=job.comparison,
@@ -124,6 +128,33 @@ class ResearchJobService:
             verifications=job.verifications,
             error=job.error,
         )
+
+    def list_jobs(self) -> list[ResearchResultResponse]:
+        """Lists all stored research jobs ordered by creation date descending."""
+        jobs = self.job_repository.list_jobs()
+        jobs.sort(key=lambda j: j.created_at, reverse=True)
+        results = []
+        for job in jobs:
+            focus_val = job.focus_query or getattr(job, "research_focus", None)
+            results.append(
+                ResearchResultResponse(
+                    research_id=job.research_id,
+                    status=job.status,
+                    created_at=job.created_at,
+                    completed_at=job.completed_at,
+                    paper_ids=job.paper_ids,
+                    tasks=job.tasks,
+                    focus_query=focus_val,
+                    research_focus=focus_val,
+                    poll_url=f"/api/research/{job.research_id}",
+                    papers=job.papers,
+                    comparison=job.comparison,
+                    is_claim_verified=job.is_claim_verified,
+                    verifications=job.verifications,
+                    error=job.error,
+                )
+            )
+        return results
 
     def transition_to_processing(self, research_id: str) -> ResearchJobRecord:
         """Transitions job to 'processing' status."""
@@ -319,13 +350,19 @@ class ResearchJobService:
                 synthesize_cross_paper_comparison,
             )
 
+            focus_val = job.focus_query or getattr(job, "research_focus", None)
             papers_synthesis: list[PaperSynthesisItem] = []
             for paper_id in job.paper_ids:
                 doc = self.document_repository.get_document(paper_id)
                 filename = doc.filename if doc and doc.filename else f"{paper_id}.pdf"
                 chunks = self.document_repository.get_chunks(paper_id)
 
-                summary = synthesize_paper_summary(chunks, paper_id, filename)
+                summary = synthesize_paper_summary(
+                    chunks=chunks,
+                    paper_id=paper_id,
+                    filename=filename,
+                    focus_query=focus_val,
+                )
                 papers_synthesis.append(
                     PaperSynthesisItem(
                         paper_id=paper_id,
@@ -336,7 +373,10 @@ class ResearchJobService:
 
             comparison: Optional[ComparisonResult] = None
             if ResearchTask.COMPARE in job.tasks or len(job.paper_ids) >= 2:
-                comparison = synthesize_cross_paper_comparison(papers_synthesis)
+                comparison = synthesize_cross_paper_comparison(
+                    papers=papers_synthesis,
+                    focus_query=focus_val,
+                )
 
             self.complete_job(
                 research_id=research_id,

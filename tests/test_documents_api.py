@@ -298,5 +298,26 @@ def test_existing_json_field_names_remain_unchanged():
 
     # Chunk contract: {"chunk_id", "paper_id", "page_number", "paragraph_number", "section", "text"}
     chunks_res = client.get(f"/api/documents/{paper_id}/chunks")
+    assert chunks_res.status_code == 200
     chunk = chunks_res.json()[0]
     assert set(chunk.keys()) == {"chunk_id", "paper_id", "page_number", "paragraph_number", "section", "text"}
+
+
+def test_get_document_pdf_stream_and_fallback():
+    """Verify that uploaded PDFs can be retrieved via /api/documents/{paper_id}/pdf."""
+    pdf_bytes = _create_sample_pdf_bytes()
+    files = {"file": ("pdf_stream_test.pdf", pdf_bytes, "application/pdf")}
+
+    upload_res = client.post("/api/documents/upload", files=files)
+    assert upload_res.status_code == 201
+    paper_id = upload_res.json()["documents"][0]["paper_id"]
+
+    pdf_res = client.get(f"/api/documents/{paper_id}/pdf")
+    assert pdf_res.status_code == 200
+    assert pdf_res.headers["content-type"] == "application/pdf"
+    assert "pdf_stream_test.pdf" in pdf_res.headers["content-disposition"]
+    assert pdf_res.content == pdf_bytes
+
+    # Non-existent document returns 404
+    missing_res = client.get("/api/documents/non_existent_doc/pdf")
+    assert missing_res.status_code == 404

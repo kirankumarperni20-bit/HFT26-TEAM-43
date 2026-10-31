@@ -65,6 +65,25 @@ def generate_research(
 
 
 @router.get(
+    "",
+    status_code=status.HTTP_200_OK,
+    response_model=list[ResearchResultResponse],
+    summary="List all research jobs",
+)
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=list[ResearchResultResponse],
+    include_in_schema=False,
+)
+def list_research_jobs(
+    service: ResearchJobService = Depends(get_research_service),
+) -> list[ResearchResultResponse]:
+    """Retrieves all stored research jobs sorted with the most recent first."""
+    return service.list_jobs()
+
+
+@router.get(
     "/{research_id}",
     status_code=status.HTTP_200_OK,
     response_model=ResearchResultResponse,

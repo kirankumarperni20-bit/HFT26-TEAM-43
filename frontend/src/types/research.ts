@@ -152,6 +152,7 @@ export interface ResearchResult {
   paper_ids: string[];
   tasks: ResearchTask[];
   focus_query?: string | null;
+  research_focus?: string | null;
   poll_url?: string;
   /** Populated when 'summarize' task is requested and status is 'completed' */
   papers?: PaperSynthesisItem[];
@@ -175,6 +176,7 @@ export interface StartResearchPayload {
   tasks: ResearchTask[];
   /** Optional guiding focus question (maximum 500 characters) */
   focus_query?: string | null;
+  research_focus?: string | null;
 }
 
 /**
