@@ -5,7 +5,11 @@ from backend.database.connection import (
     create_db_engine,
     get_database_url,
     get_db_session,
+    get_db_session_dep,
     get_session_factory,
+    is_database_configured,
+    load_environment,
+    reset_cached_engine,
 )
 from backend.database.models import Base, ChunkRecord
 from backend.database.repository import (
@@ -29,4 +33,9 @@ __all__ = [
     "get_database_url",
     "get_session_factory",
     "get_db_session",
+    "get_db_session_dep",
+    "is_database_configured",
+    "load_environment",
+    "reset_cached_engine",
 ]
+

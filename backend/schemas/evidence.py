@@ -19,6 +19,10 @@ class EvidenceItem(BaseModel):
     retrieval_method: Literal["hybrid", "vector", "lexical"] = Field(
         ..., description="Retrieval method used to fetch this evidence item ('hybrid', 'vector', or 'lexical')"
     )
+    section: str | None = Field(
+        default=None,
+        description="Optional section heading name preserved from the source chunk without alteration",
+    )
 
 
 class ClaimEvidenceResponse(BaseModel):

@@ -1,10 +1,12 @@
-# Byte-compiled / optimized / DLL files
+```gitignore
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual Environments
+# Virtual environments
 .venv/
+**/.venv/
 venv/
 ENV/
 env/
@@ -16,11 +18,20 @@ htmlcov/
 
 # Environment variables and secrets
 .env
+**/.env
 *.local
 
 # IDEs and OS files
 .vscode/
 .idea/
 *.swp
+.DS_Store
 Thumbs.db
 Desktop.ini
+
+# Backend generated data
+backend/data/*
+!backend/data/.gitkeep
+```
+
+backend/.venv

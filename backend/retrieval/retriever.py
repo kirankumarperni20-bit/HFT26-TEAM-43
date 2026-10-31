@@ -184,6 +184,7 @@ class EvidenceRetriever:
                     text=res.chunk.text,
                     retrieval_score=float(res.score),
                     retrieval_method="hybrid",
+                    section=res.chunk.section,
                 )
             )
 

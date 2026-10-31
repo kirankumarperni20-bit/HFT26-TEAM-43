@@ -21,6 +21,7 @@ from backend.retrieval.lexical_search import (
     LexicalSearchResult,
     tokenize_text,
 )
+from backend.retrieval.ingest import ingest_pdf, parse_pdf_to_chunks
 from backend.retrieval.retriever import EvidenceRetriever, EvidenceRetrieverError
 from backend.retrieval.vector_search import VectorSearchEngine, VectorSearchResult
 
@@ -44,4 +45,7 @@ __all__ = [
     "HybridSearchInputError",
     "EvidenceRetriever",
     "EvidenceRetrieverError",
+    "parse_pdf_to_chunks",
+    "ingest_pdf",
 ]
+

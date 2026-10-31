@@ -1,0 +1,7 @@
+{
+  "venvPath": "backend",
+  "venv": ".venv-antigravity",
+  "pythonPath": "backend/.venv-antigravity/bin/python",
+  "extraPaths": ["backend"],
+  "reportMissingImports": true
+}
