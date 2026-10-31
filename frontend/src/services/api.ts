@@ -146,13 +146,12 @@ export async function getPageText(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Research & Synthesis (Milestone F4)
+// Research & Synthesis (Milestones F4 & F5)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * POST /api/research/generate
  * Initiates an asynchronous research synthesis (summarize and/or compare) job.
- * Note: Proposed contract. Backend endpoint implementation by Member 3 (GenAI) is pending.
  */
 export async function startResearchSynthesis(
   payload: StartResearchPayload,
@@ -166,12 +165,23 @@ export async function startResearchSynthesis(
 /**
  * GET /api/research/{research_id}
  * Retrieves the status and results of a research synthesis job.
- * Note: Proposed contract. Backend endpoint implementation by Member 3 (GenAI) is pending.
  */
 export async function getResearchResult(
   researchId: string,
 ): Promise<ResearchResult> {
   return apiFetch<ResearchResult>(`/research/${encodeURIComponent(researchId)}`);
+}
+
+/**
+ * POST /api/research/{research_id}/verify
+ * Evaluates claims from a completed research summary against document evidence (Milestone F5).
+ */
+export async function verifyResearchClaims(
+  researchId: string,
+): Promise<ResearchResult> {
+  return apiFetch<ResearchResult>(`/research/${encodeURIComponent(researchId)}/verify`, {
+    method: 'POST',
+  });
 }
 
 // Re-export apiFetch for callers that need custom requests

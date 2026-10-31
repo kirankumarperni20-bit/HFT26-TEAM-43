@@ -35,24 +35,24 @@ export default function PaperSummaryCard({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Objective */}
+        {/* Research Question */}
         <div className="rounded-lg bg-gray-50/70 border border-gray-100 p-3.5 space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
             <Target size={14} className="text-blue-600" />
-            Research Objective
+            Research Question
           </h4>
           <GroundedFieldView
             field={summary?.objective}
             paperFilenameMap={paperFilenameMap}
-            fallbackText="No explicit objective extracted."
+            fallbackText="No explicit research question extracted."
           />
         </div>
 
-        {/* Methodology */}
+        {/* How the Study Was Conducted */}
         <div className="rounded-lg bg-gray-50/70 border border-gray-100 p-3.5 space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
             <Cpu size={14} className="text-purple-600" />
-            Methodology & Approach
+            How the Study Was Conducted
           </h4>
           <GroundedFieldView
             field={summary?.methodology}
@@ -62,11 +62,11 @@ export default function PaperSummaryCard({
         </div>
       </div>
 
-      {/* Key Findings */}
+      {/* Main Findings */}
       <div className="space-y-2">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
           <CheckCircle size={14} className="text-emerald-600" />
-          Key Findings
+          Main Findings
         </h4>
         {summary?.findings && summary.findings.length > 0 ? (
           <ul className="space-y-2.5" role="list">
@@ -93,7 +93,7 @@ export default function PaperSummaryCard({
       <div className="space-y-2">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
           <AlertOctagon size={14} className="text-amber-600" />
-          Reported Limitations
+          Limitations
         </h4>
         {summary?.limitations && summary.limitations.length > 0 ? (
           <ul className="space-y-2.5" role="list">
@@ -118,4 +118,3 @@ export default function PaperSummaryCard({
     </article>
   );
 }
-

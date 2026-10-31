@@ -1,6 +1,14 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+try:
+    from backend.llm.schemas.verification import ClaimVerification
+except ModuleNotFoundError:
+    try:
+        from llm.schemas.verification import ClaimVerification
+    except ModuleNotFoundError:
+        ClaimVerification = Any
 
 
 class ResearchTask(str, Enum):
@@ -139,5 +147,5 @@ class ResearchResultResponse(BaseModel):
     papers: Optional[list[PaperSynthesisItem]] = None
     comparison: Optional[ComparisonResult] = None
     is_claim_verified: bool = False
+    verifications: Optional[list[ClaimVerification]] = None
     error: Optional[ResearchJobError] = None
-

@@ -1,5 +1,6 @@
 import logging
-from fastapi import APIRouter, Depends, status
+import os
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 
 from backend.api.documents import get_repository as get_document_repository
 from backend.ingestion.repository import DocumentRepository
@@ -43,6 +44,7 @@ def get_research_service(
 )
 def generate_research(
     payload: StartResearchPayload,
+    background_tasks: BackgroundTasks,
     service: ResearchJobService = Depends(get_research_service),
 ) -> StartResearchResponse:
     """
@@ -56,7 +58,10 @@ def generate_research(
         payload.tasks,
         bool(payload.focus_query),
     )
-    return service.create_job(payload)
+    response = service.create_job(payload)
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        background_tasks.add_task(service.process_job, response.research_id)
+    return response
 
 
 @router.get(
@@ -75,3 +80,19 @@ def get_research(
     """
     return service.get_job(research_id)
 
+
+@router.post(
+    "/{research_id}/verify",
+    status_code=status.HTTP_200_OK,
+    response_model=ResearchResultResponse,
+    summary="Verify claims in generated research summary",
+)
+async def verify_research(
+    research_id: str,
+    service: ResearchJobService = Depends(get_research_service),
+) -> ResearchResultResponse:
+    """
+    Evaluates claims from a completed research summary against source document evidence.
+    Classifies each claim as SUPPORTED, CONTRADICTED, INSUFFICIENT EVIDENCE, or VERIFICATION FAILED.
+    """
+    return await service.verify_job(research_id)

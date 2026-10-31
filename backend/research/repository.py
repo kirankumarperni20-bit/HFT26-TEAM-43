@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, ConfigDict
 
 from backend.schemas.research import (
@@ -10,6 +10,14 @@ from backend.schemas.research import (
     ComparisonResult,
     ResearchJobError,
 )
+
+try:
+    from backend.llm.schemas.verification import ClaimVerification
+except ModuleNotFoundError:
+    try:
+        from llm.schemas.verification import ClaimVerification
+    except ModuleNotFoundError:
+        ClaimVerification = Any
 
 
 class ResearchJobRecord(BaseModel):
@@ -26,6 +34,7 @@ class ResearchJobRecord(BaseModel):
     papers: Optional[list[PaperSynthesisItem]] = None
     comparison: Optional[ComparisonResult] = None
     is_claim_verified: bool = False
+    verifications: Optional[list[ClaimVerification]] = None
     error: Optional[ResearchJobError] = None
 
 
@@ -60,8 +69,19 @@ class ResearchJobRepository(ABC):
         papers: Optional[list[PaperSynthesisItem]],
         comparison: Optional[ComparisonResult],
         completed_at: str,
+        is_claim_verified: bool = False,
     ) -> Optional[ResearchJobRecord]:
         """Stores the completed synthesis result and marks the job completed."""
+        pass
+
+    @abstractmethod
+    def update_job_verifications(
+        self,
+        research_id: str,
+        verifications: list[ClaimVerification],
+        is_claim_verified: bool = True,
+    ) -> Optional[ResearchJobRecord]:
+        """Stores claim verification results for a research job."""
         pass
 
     @abstractmethod
@@ -117,6 +137,7 @@ class InMemoryResearchJobRepository(ResearchJobRepository):
         papers: Optional[list[PaperSynthesisItem]],
         comparison: Optional[ComparisonResult],
         completed_at: str,
+        is_claim_verified: bool = False,
     ) -> Optional[ResearchJobRecord]:
         job = self._jobs.get(research_id)
         if job is None:
@@ -127,8 +148,26 @@ class InMemoryResearchJobRepository(ResearchJobRepository):
                 "papers": copy.deepcopy(papers) if papers is not None else None,
                 "comparison": copy.deepcopy(comparison) if comparison is not None else None,
                 "completed_at": completed_at,
-                "is_claim_verified": False,
+                "is_claim_verified": is_claim_verified,
                 "error": None,
+            }
+        )
+        self._jobs[research_id] = updated
+        return copy.deepcopy(updated)
+
+    def update_job_verifications(
+        self,
+        research_id: str,
+        verifications: list[ClaimVerification],
+        is_claim_verified: bool = True,
+    ) -> Optional[ResearchJobRecord]:
+        job = self._jobs.get(research_id)
+        if job is None:
+            return None
+        updated = job.model_copy(
+            update={
+                "verifications": copy.deepcopy(verifications),
+                "is_claim_verified": is_claim_verified,
             }
         )
         self._jobs[research_id] = updated
@@ -155,4 +194,3 @@ class InMemoryResearchJobRepository(ResearchJobRepository):
 
     def list_jobs(self) -> list[ResearchJobRecord]:
         return [copy.deepcopy(j) for j in self._jobs.values()]
-

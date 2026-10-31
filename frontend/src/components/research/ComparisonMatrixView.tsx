@@ -26,10 +26,10 @@ export default function ComparisonMatrixView({
         </div>
         <div>
           <h3 id="comparison-results-heading" className="text-base font-bold text-gray-900">
-            Cross-Paper Synthesis & Comparison
+            Comparison of Research Papers
           </h3>
           <p className="text-xs text-gray-500">
-            Comparative analysis and structured multi-dimension matrix.
+            Side-by-side comparison across key dimensions with supporting evidence.
           </p>
         </div>
       </div>
@@ -39,7 +39,7 @@ export default function ComparisonMatrixView({
         <div className="space-y-2 rounded-lg bg-purple-50/40 border border-purple-100 p-4">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
             <AlignLeft size={14} className="text-purple-600" />
-            Comparative Synthesis Narrative
+            Comparison Summary
           </h4>
           <p className="text-xs text-gray-800 leading-relaxed whitespace-pre-line">
             {synthesis_narrative}
@@ -51,7 +51,7 @@ export default function ComparisonMatrixView({
       <div className="space-y-2">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
           <Table size={14} className="text-gray-600" />
-          Comparative Matrix
+          Comparison Table
         </h4>
 
         {matrix && matrix.length > 0 ? (
@@ -63,7 +63,7 @@ export default function ComparisonMatrixView({
                     scope="col"
                     className="py-3 px-4 font-semibold text-gray-900 w-1/4 min-w-[160px]"
                   >
-                    Criterion / Dimension
+                    Dimension
                   </th>
                   {paperIds.map((pid) => {
                     const name = paperFilenameMap[pid] || pid;
@@ -128,4 +128,3 @@ export default function ComparisonMatrixView({
     </section>
   );
 }
-

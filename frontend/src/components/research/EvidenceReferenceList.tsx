@@ -25,22 +25,22 @@ export default function EvidenceReferenceList({
           onClick={() => setExpanded(!expanded)}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 rounded px-1 -ml-1 py-0.5"
           aria-expanded={expanded}
-          aria-label={`${references.length} source citation${references.length > 1 ? 's' : ''}`}
+          aria-label={`View supporting evidence (${references.length})`}
         >
           <BookOpen size={13} className="text-blue-500 shrink-0" />
           <span>
-            {references.length} source citation{references.length > 1 ? 's' : ''}
+            View Supporting Evidence ({references.length})
           </span>
           {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
 
         <span className="text-[10px] text-gray-400 italic">
-          Citation context (does not independently verify truth)
+          Evidence from the Paper
         </span>
       </div>
 
       {expanded && (
-        <div className="mt-2 space-y-2" role="region" aria-label="Evidence references details">
+        <div className="mt-2 space-y-2" role="region" aria-label="Evidence from the paper">
           {references.map((ref, index) => {
             const displayName =
               paperFilenameMap[ref.paper_id] || ref.paper_id;

@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { startResearchSynthesis, getResearchResult } from '@/services/api';
+import {
+  startResearchSynthesis,
+  getResearchResult,
+  verifyResearchClaims,
+} from '@/services/api';
 import type {
   StartResearchPayload,
   ResearchResult,
@@ -14,7 +18,10 @@ export interface UseResearchJobResult {
   submitError: string | null;
   pollingError: string | null;
   consecutivePollErrors: number;
+  isVerifying: boolean;
+  verificationError: string | null;
   startJob: (payload: StartResearchPayload) => Promise<boolean>;
+  verifyClaims: () => Promise<boolean>;
   retryPolling: () => void;
   resetJob: () => void;
   clearSubmitError: () => void;
@@ -28,7 +35,7 @@ const MAX_CONSECUTIVE_POLL_ERRORS = 10;
  * 1. Submission: Calls POST /api/research/generate
  * 2. Polling: Polls GET /api/research/{research_id} every 2.5s while 'queued' or 'processing'
  * 3. Terminal state: Halts polling on 'completed' or 'failed'
- * 4. Error isolation: Distinguishes temporary network drops from actual job failure
+ * 4. Verification: Calls POST /api/research/{research_id}/verify (Milestone F5)
  * 5. Cleanup: Cleans up timers and in-flight polling on unmount or job reset
  */
 export function useResearchJob(): UseResearchJobResult {
@@ -39,6 +46,9 @@ export function useResearchJob(): UseResearchJobResult {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pollingError, setPollingError] = useState<string | null>(null);
   const [consecutivePollErrors, setConsecutivePollErrors] = useState(0);
+
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const pollTimeoutRef = useRef<number | null>(null);
   const isPollingActiveRef = useRef(false);
@@ -84,7 +94,6 @@ export function useResearchJob(): UseResearchJobResult {
         // Continue polling if job is still in progress
         if (response.status === 'queued' || response.status === 'processing') {
           clearTimer();
-          // Respect backend retry interval if provided, otherwise default to 2.5s
           const delay =
             typeof response.error?.retry_after_seconds === 'number' &&
             response.error.retry_after_seconds > 0
@@ -95,13 +104,11 @@ export function useResearchJob(): UseResearchJobResult {
             void executePoll(id);
           }, delay);
         } else {
-          // Terminal state reached: 'completed' or 'failed' -> halt polling
           clearTimer();
         }
       } catch (err) {
         if (!isMountedRef.current) return;
 
-        // Temporary polling or network error: do NOT mark the job itself as failed
         const message =
           err instanceof Error
             ? err.message
@@ -112,7 +119,6 @@ export function useResearchJob(): UseResearchJobResult {
           const nextCount = prev + 1;
           clearTimer();
           if (nextCount < MAX_CONSECUTIVE_POLL_ERRORS) {
-            // Schedule retry
             pollTimeoutRef.current = window.setTimeout(() => {
               void executePoll(id);
             }, POLLING_INTERVAL_MS);
@@ -153,6 +159,8 @@ export function useResearchJob(): UseResearchJobResult {
       setPollingError(null);
       setConsecutivePollErrors(0);
       setResult(null);
+      setIsVerifying(false);
+      setVerificationError(null);
 
       try {
         const response = await startResearchSynthesis(payload);
@@ -177,6 +185,32 @@ export function useResearchJob(): UseResearchJobResult {
     [clearTimer],
   );
 
+  // Claim verification action (Milestone F5)
+  const verifyClaims = useCallback(async (): Promise<boolean> => {
+    if (!jobId) return false;
+    setIsVerifying(true);
+    setVerificationError(null);
+
+    try {
+      const updated = await verifyResearchClaims(jobId);
+      if (!isMountedRef.current) return false;
+
+      setResult(updated);
+      setIsVerifying(false);
+      return true;
+    } catch (err) {
+      if (!isMountedRef.current) return false;
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to verify claims against source documents.';
+      setVerificationError(message);
+      setIsVerifying(false);
+      return false;
+    }
+  }, [jobId]);
+
   // Manual retry for polling if stopped after consecutive errors
   const retryPolling = useCallback(() => {
     if (jobId && (status === 'queued' || status === 'processing')) {
@@ -197,6 +231,8 @@ export function useResearchJob(): UseResearchJobResult {
     setSubmitError(null);
     setPollingError(null);
     setConsecutivePollErrors(0);
+    setIsVerifying(false);
+    setVerificationError(null);
   }, [clearTimer]);
 
   const clearSubmitError = useCallback(() => {
@@ -211,10 +247,12 @@ export function useResearchJob(): UseResearchJobResult {
     submitError,
     pollingError,
     consecutivePollErrors,
+    isVerifying,
+    verificationError,
     startJob,
+    verifyClaims,
     retryPolling,
     resetJob,
     clearSubmitError,
   };
 }
-

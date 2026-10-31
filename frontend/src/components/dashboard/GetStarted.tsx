@@ -19,6 +19,11 @@ const steps = [
     title: 'Compare papers',
     description: 'Find similarities and differences across multiple research papers.',
   },
+  {
+    number: 5,
+    title: 'Verify claims',
+    description: 'Check whether statements in summaries are supported by the paper.',
+  },
 ];
 
 export default function GetStarted() {

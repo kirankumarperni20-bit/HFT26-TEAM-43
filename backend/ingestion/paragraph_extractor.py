@@ -48,16 +48,16 @@ def detect_section_heading(text: str) -> Optional[str]:
     if not line or len(line) > 80:
         return None
 
+    # Check unnumbered common heading (e.g., 'Introduction', 'Related Work:', 'Abstract')
+    clean_line = re.sub(r"[:\-–—\s\.]+$", "", line).strip()
+    if clean_line.lower() in COMMON_HEADINGS:
+        return clean_line.title()
+
     # Exclude lines ending with typical sentence punctuation
     if re.search(r"[a-zA-Z]{2,}\.\s*$", line):
         return None
     if line.endswith(("?", "!", ";")):
         return None
-
-    # Check unnumbered common heading (e.g., 'Introduction', 'Related Work:')
-    clean_line = re.sub(r"[:\-–—\s]+$", "", line).strip()
-    if clean_line.lower() in COMMON_HEADINGS:
-        return clean_line.title()
 
     # Check numbered heading (e.g., '1 Introduction', '2. Methodology', '3.1 Dataset', 'Section 4: Results')
     prefix_match = re.match(
@@ -67,7 +67,7 @@ def detect_section_heading(text: str) -> Optional[str]:
     )
     if prefix_match:
         title_part = prefix_match.group(2).strip()
-        title_part_clean = re.sub(r"[:\-–—\s]+$", "", title_part).strip()
+        title_part_clean = re.sub(r"[:\-–—\s\.]+$", "", title_part).strip()
         if title_part_clean and len(title_part_clean) <= 60:
             if not re.search(r"[a-zA-Z]{2,}\.\s*$", title_part_clean):
                 if title_part_clean.lower() in COMMON_HEADINGS:
@@ -115,14 +115,14 @@ def extract_paragraphs(pages: list[ExtractedPage]) -> list[ExtractedParagraph]:
                 current_section = standalone_heading
                 continue
 
-            # Check if the block begins with a heading line followed by paragraph body (single newline)
-            lines = cleaned_block.split("\n", 1)
-            if len(lines) == 2:
+            # Check if the block begins with a heading line followed by paragraph body
+            lines = cleaned_block.split("\n")
+            if len(lines) >= 2:
                 first_line = lines[0].strip()
-                heading_on_first_line = detect_section_heading(first_line)
-                if heading_on_first_line:
-                    current_section = heading_on_first_line
-                    body_text = lines[1].strip()
+                heading_on_first = detect_section_heading(first_line)
+                if heading_on_first:
+                    current_section = heading_on_first
+                    body_text = "\n".join(lines[1:]).strip()
                     if body_text:
                         paragraphs.append(
                             ExtractedParagraph(
@@ -134,6 +134,45 @@ def extract_paragraphs(pages: list[ExtractedPage]) -> list[ExtractedParagraph]:
                         )
                         paragraph_number += 1
                     continue
+
+                # Check two-line heading: "1" followed by "Introduction"
+                if re.match(r"^\d+(\.\d+)*$", first_line) and len(lines) >= 2:
+                    second_line = lines[1].strip()
+                    cand_heading = detect_section_heading(f"{first_line} {second_line}")
+                    if cand_heading:
+                        current_section = cand_heading
+                        body_text = "\n".join(lines[2:]).strip()
+                        if body_text:
+                            paragraphs.append(
+                                ExtractedParagraph(
+                                    page_number=page_number,
+                                    paragraph_number=paragraph_number,
+                                    section=current_section,
+                                    text=body_text,
+                                )
+                            )
+                            paragraph_number += 1
+                        continue
+
+            # Check for inline headings like "Abstract—..." or "Abstract: ..."
+            inline_match = re.match(
+                r"^(abstract|introduction|background|methodology|methods|experiments|results|discussion|conclusion|conclusions|limitations|future work)[\s—–\-:]+(.+)$",
+                cleaned_block,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+            if inline_match:
+                current_section = inline_match.group(1).title()
+                body_text = inline_match.group(2).strip()
+                paragraphs.append(
+                    ExtractedParagraph(
+                        page_number=page_number,
+                        paragraph_number=paragraph_number,
+                        section=current_section,
+                        text=body_text,
+                    )
+                )
+                paragraph_number += 1
+                continue
 
             # Standard body paragraph: retain internal line breaks and original characters
             paragraphs.append(

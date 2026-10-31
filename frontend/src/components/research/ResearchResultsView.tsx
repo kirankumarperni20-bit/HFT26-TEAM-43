@@ -1,47 +1,93 @@
 import { useState } from 'react';
-import { FileText, GitCompare, ShieldAlert, Sparkles } from 'lucide-react';
+import {
+  FileText,
+  GitCompare,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import type { ResearchResult } from '@/types/research';
 import PaperSummaryCard from './PaperSummaryCard';
 import ComparisonMatrixView from './ComparisonMatrixView';
+import ClaimVerificationView from './ClaimVerificationView';
 
 interface ResearchResultsViewProps {
   result: ResearchResult;
   paperFilenameMap?: Record<string, string>;
+  onVerify?: () => void;
+  isVerifying?: boolean;
+  verificationError?: string | null;
 }
 
 export default function ResearchResultsView({
   result,
   paperFilenameMap = {},
+  onVerify = () => {},
+  isVerifying = false,
+  verificationError = null,
 }: ResearchResultsViewProps) {
-  const hasPapers = result.papers && result.papers.length > 0;
+  const hasPapers = Boolean(result.papers && result.papers.length > 0);
   const hasComparison = Boolean(result.comparison);
 
-  // Tab state if both are present
-  const [activeTab, setActiveTab] = useState<'summaries' | 'comparison'>(
-    hasPapers ? 'summaries' : 'comparison',
+  // Active tab state
+  const [activeTab, setActiveTab] = useState<'summaries' | 'comparison' | 'verification'>(
+    hasPapers ? 'summaries' : hasComparison ? 'comparison' : 'verification',
   );
 
   return (
     <div className="space-y-6">
-      {/* Verification Disclaimer Banner */}
+      {/* Verification Status Banner */}
       <div
-        role="note"
-        className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-xs text-blue-900 flex items-start gap-3"
+        role="region"
+        aria-label="Claim verification status"
+        className={`rounded-xl border p-4 text-xs transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
+          result.is_claim_verified
+            ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
+            : 'border-blue-200 bg-blue-50/70 text-blue-950'
+        }`}
       >
-        <ShieldAlert size={18} className="text-blue-600 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-semibold text-blue-950">
-            Unverified Research Output (Milestone F4)
-          </p>
-          <p className="text-blue-800 leading-relaxed">
-            In Milestone F4, claims are synthesized with grounded chunk citations but are not yet verified by automated claim checking (<code className="font-mono text-[11px] bg-blue-100 px-1 py-0.5 rounded">is_claim_verified: false</code>). Automated verification will be introduced in Milestone F5. Always inspect primary sources.
-          </p>
+        <div className="flex items-start gap-2.5">
+          <ShieldCheck
+            size={18}
+            className={`shrink-0 mt-0.5 ${
+              result.is_claim_verified ? 'text-emerald-600' : 'text-blue-600'
+            }`}
+          />
+          <div>
+            <p className="font-semibold text-gray-900">
+              {result.is_claim_verified
+                ? 'Evidence-Based Claim Verification Completed'
+                : 'Claim Verification Available'}
+            </p>
+            <p className="text-gray-600 mt-0.5 leading-relaxed">
+              {result.is_claim_verified
+                ? `Evaluated ${result.verifications?.length ?? 0} claims directly against source document evidence.`
+                : 'Evaluate each research statement against verbatim excerpts in the source papers.'}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="button"
+            onClick={onVerify}
+            disabled={isVerifying}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 shadow-xs transition-colors shrink-0"
+          >
+            <ShieldCheck size={13} />
+            <span>
+              {isVerifying
+                ? 'Checking claim…'
+                : result.is_claim_verified
+                ? 'Re-verify Claims'
+                : 'Verify Claims'}
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* Navigation Tabs (if both summaries and comparison are present) */}
-      {hasPapers && hasComparison && (
-        <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+        {hasPapers && (
           <button
             type="button"
             onClick={() => setActiveTab('summaries')}
@@ -54,6 +100,9 @@ export default function ResearchResultsView({
             <FileText size={14} />
             Paper Summaries ({result.papers?.length})
           </button>
+        )}
+
+        {hasComparison && (
           <button
             type="button"
             onClick={() => setActiveTab('comparison')}
@@ -64,13 +113,29 @@ export default function ResearchResultsView({
             }`}
           >
             <GitCompare size={14} />
-            Cross-Paper Comparison
+            Comparison of Research Papers
           </button>
-        </div>
-      )}
+        )}
 
-      {/* Summaries View */}
-      {hasPapers && (activeTab === 'summaries' || !hasComparison) && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('verification')}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            activeTab === 'verification'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          <ShieldCheck size={14} />
+          Claim Verification
+          {result.is_claim_verified && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+          )}
+        </button>
+      </div>
+
+      {/* Tab 1: Summaries View */}
+      {activeTab === 'summaries' && hasPapers && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -94,8 +159,8 @@ export default function ResearchResultsView({
         </div>
       )}
 
-      {/* Comparison View */}
-      {hasComparison && result.comparison && (activeTab === 'comparison' || !hasPapers) && (
+      {/* Tab 2: Comparison View */}
+      {activeTab === 'comparison' && hasComparison && result.comparison && (
         <ComparisonMatrixView
           comparison={result.comparison}
           paperIds={result.paper_ids}
@@ -103,8 +168,20 @@ export default function ResearchResultsView({
         />
       )}
 
+      {/* Tab 3: Claim Verification View */}
+      {activeTab === 'verification' && (
+        <ClaimVerificationView
+          verifications={result.verifications}
+          isVerified={result.is_claim_verified}
+          isVerifying={isVerifying}
+          onVerify={onVerify}
+          error={verificationError}
+          paperFilenameMap={paperFilenameMap}
+        />
+      )}
+
       {/* Empty State: If neither section has content */}
-      {!hasPapers && !hasComparison && (
+      {!hasPapers && !hasComparison && activeTab !== 'verification' && (
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-xs text-gray-500">
           <Sparkles size={28} className="mx-auto text-gray-400 mb-2" />
           <p className="font-semibold text-gray-700">No synthesis content returned</p>
@@ -116,4 +193,3 @@ export default function ResearchResultsView({
     </div>
   );
 }
-

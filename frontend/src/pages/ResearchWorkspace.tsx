@@ -27,7 +27,10 @@ export default function ResearchWorkspace() {
     isSubmitting,
     submitError,
     pollingError,
+    isVerifying,
+    verificationError,
     startJob,
+    verifyClaims,
     retryPolling,
     resetJob,
     clearSubmitError,
@@ -125,7 +128,7 @@ export default function ResearchWorkspace() {
             Research Workspace
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Generate plain-language summaries and cross-paper comparative synthesis with verifiable citations.
+            Generate plain-language summaries and comparison of research papers with verifiable evidence.
           </p>
         </div>
 
@@ -212,6 +215,9 @@ export default function ResearchWorkspace() {
             <ResearchResultsView
               result={result}
               paperFilenameMap={paperFilenameMap}
+              onVerify={verifyClaims}
+              isVerifying={isVerifying}
+              verificationError={verificationError}
             />
           )}
         </div>

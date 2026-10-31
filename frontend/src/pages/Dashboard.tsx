@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Upload, FileText, CheckCircle, Clock, BookOpen, XCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Clock, ShieldCheck, XCircle } from 'lucide-react';
 import SummaryCard from '@/components/dashboard/SummaryCard';
 import RecentDocuments from '@/components/dashboard/RecentDocuments';
 import GetStarted from '@/components/dashboard/GetStarted';
@@ -45,10 +45,10 @@ export default function Dashboard() {
       iconColor: 'text-amber-600',
     },
     {
-      title: 'Research Sessions',
-      value: 0,
-      subtitle: 'Not yet available',
-      icon: <BookOpen size={20} />,
+      title: 'Claim Verification',
+      value: stats.processedPapers,
+      subtitle: 'Evidence-based checking',
+      icon: <ShieldCheck size={20} />,
       iconBg: 'bg-purple-50',
       iconColor: 'text-purple-600',
     },
@@ -99,24 +99,31 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Lower two-column grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <RecentDocuments
-          documents={documents}
-          loading={loading}
-          error={error}
-          onRetry={() => void fetch()}
-        />
-        <GetStarted />
+      {/* Main dashboard grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+        {/* Recent documents (7 cols) */}
+        <div className="lg:col-span-7">
+          <RecentDocuments
+            documents={documents}
+            loading={loading}
+            error={error}
+            onRetry={fetch}
+          />
+        </div>
+
+        {/* Get started steps (5 cols) */}
+        <div className="lg:col-span-5">
+          <GetStarted />
+        </div>
       </div>
 
       {/* Upload modal */}
       {showUpload && (
         <UploadModal
+          onClose={() => setShowUpload(false)}
+          onUpload={upload}
           uploading={uploading}
           uploadError={uploadError}
-          onUpload={upload}
-          onClose={() => setShowUpload(false)}
           onClearError={clearUploadError}
         />
       )}

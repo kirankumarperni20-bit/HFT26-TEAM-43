@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Frontend types for Milestone F4: Research Summaries & Cross-Paper Synthesis
+// Frontend types for Milestone F4 & F5: Research Summaries & Claim Verification
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Supported research synthesis tasks. */
@@ -95,6 +95,51 @@ export interface ResearchJobError {
 }
 
 /**
+ * Decision outcome for an individual atomic claim evaluated against document evidence.
+ */
+export type VerificationDecision =
+  | 'SUPPORTED'
+  | 'PARTIALLY_SUPPORTED'
+  | 'CONTRADICTED'
+  | 'INSUFFICIENT EVIDENCE'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'UNRESOLVED'
+  | 'VERIFICATION FAILED'
+  | 'VERIFICATION_FAILED'
+  | 'PENDING';
+
+/**
+ * Cited evidence excerpt with verifiable document provenance.
+ */
+export interface VerifiedEvidenceItem {
+  evidence_id: string;
+  paper_id: string;
+  chunk_id?: string | null;
+  page?: number | null;
+  section?: string | null;
+  quote: string;
+  retrieval_method?: string | null;
+  is_verbatim?: boolean;
+  validation_notes?: string | null;
+}
+
+/**
+ * Audit record for a verified atomic claim.
+ */
+export interface ClaimVerificationItem {
+  claim_id: string;
+  claim_text: string;
+  verification_status: VerificationDecision;
+  explanation: string;
+  supporting_evidence: VerifiedEvidenceItem[];
+  contradicting_evidence: VerifiedEvidenceItem[];
+  unresolved_reason?: string | null;
+  confidence?: number | null;
+  candidate_evidence_ids?: string[];
+  provenance_validated?: boolean;
+}
+
+/**
  * Complete response from GET /api/research/{research_id}.
  * Task-specific results ('papers', 'comparison') are optional to support
  * summary-only or comparison-only request configurations.
@@ -112,8 +157,10 @@ export interface ResearchResult {
   papers?: PaperSynthesisItem[];
   /** Populated when 'compare' task is requested and status is 'completed' */
   comparison?: ComparisonResult;
-  /** Explicitly false in Milestone F4; claim-level verification is deferred to F5 */
+  /** True when claim-level evidence verification has been executed (Milestone F5) */
   is_claim_verified: boolean;
+  /** Detailed claim verification items with provenance citations */
+  verifications?: ClaimVerificationItem[];
   /** Populated when status is 'failed' */
   error?: ResearchJobError | null;
 }
