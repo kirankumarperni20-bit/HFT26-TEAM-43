@@ -133,13 +133,6 @@ export async function getDocumentChunks(paperId: string): Promise<ApiChunk[]> {
 }
 
 /**
- * Returns the URL for streaming or viewing the raw PDF of a document.
- */
-export function getDocumentPdfUrl(paperId: string): string {
-  return `${BASE_URL}/documents/${encodeURIComponent(paperId)}/pdf`;
-}
-
-/**
  * GET /api/documents/{paper_id}/pages/{page_number}
  * Retrieves the exact, verbatim extracted text for a specific page.
  */
@@ -177,14 +170,6 @@ export async function getResearchResult(
   researchId: string,
 ): Promise<ResearchResult> {
   return apiFetch<ResearchResult>(`/research/${encodeURIComponent(researchId)}`);
-}
-
-/**
- * GET /api/research
- * Retrieves all stored research synthesis jobs from the backend.
- */
-export async function listResearchJobs(): Promise<ResearchResult[]> {
-  return apiFetch<ResearchResult[]>('/research');
 }
 
 /**

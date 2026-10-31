@@ -55,14 +55,6 @@ class DocumentRepository(ABC):
         """Lists all stored document metadata records."""
         pass
 
-    def save_pdf_bytes(self, paper_id: str, pdf_bytes: bytes) -> None:
-        """Stores raw PDF binary bytes for viewer display."""
-        pass
-
-    def get_pdf_bytes(self, paper_id: str) -> Optional[bytes]:
-        """Retrieves raw PDF binary bytes if available, or None."""
-        return None
-
 
 class InMemoryDocumentRepository(DocumentRepository):
     """
@@ -78,7 +70,6 @@ class InMemoryDocumentRepository(DocumentRepository):
         self._documents: dict[str, DocumentMetadata] = {}
         self._pages: dict[tuple[str, int], ExtractedPage] = {}
         self._chunks: dict[str, list[Chunk]] = {}
-        self._pdf_bytes: dict[str, bytes] = {}
 
     def save_document(self, document: DocumentMetadata) -> None:
         if not isinstance(document, DocumentMetadata):
@@ -163,9 +154,3 @@ class InMemoryDocumentRepository(DocumentRepository):
 
     def list_documents(self) -> list[DocumentMetadata]:
         return [copy.deepcopy(doc) for doc in self._documents.values()]
-
-    def save_pdf_bytes(self, paper_id: str, pdf_bytes: bytes) -> None:
-        self._pdf_bytes[paper_id] = bytes(pdf_bytes)
-
-    def get_pdf_bytes(self, paper_id: str) -> Optional[bytes]:
-        return self._pdf_bytes.get(paper_id)
